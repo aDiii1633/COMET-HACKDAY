@@ -33,6 +33,9 @@ class GuardianService:
             "phone_number": request.phone_number,
             "fcm_token": request.fcm_token or f"fcm_token_{guardian_id}",
             "status": "ACTIVE_GUARD",
+            "latitude": request.latitude,
+            "longitude": request.longitude,
+            "address": request.address,
             "created_at": datetime.utcnow().isoformat()
         }
 
@@ -40,12 +43,8 @@ class GuardianService:
         await self.user_repo.update(user_uid, user)
 
         return GuardianResponse(
-            guardian_id=guardian_id,
-            name=request.name,
-            relation=request.relation,
-            phone_number=request.phone_number,
-            fcm_token=new_guardian["fcm_token"],
-            status="ACTIVE_GUARD"
+            **new_guardian,
+            created_at=datetime.utcnow()
         )
 
     async def get_user_guardians(self, user_uid: str) -> List[GuardianResponse]:
@@ -53,6 +52,11 @@ class GuardianService:
         if not user or "guardians" not in user:
             return []
         return [GuardianResponse(**g) for g in user["guardians"]]
+
+    async def get_safe_havens(self, user_uid: str) -> List[GuardianResponse]:
+        """Returns only guardians that have a registered geographic location."""
+        guardians = await self.get_user_guardians(user_uid)
+        return [g for g in guardians if g.latitude is not None and g.longitude is not None]
 
     async def generate_emergency_alert(
         self,

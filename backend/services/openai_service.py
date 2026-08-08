@@ -19,6 +19,10 @@ class OpenAIService:
     Risk Scores are calculated exclusively by our custom Risk Engine R(s, t).
     """
 
+    def __init__(self):
+        from backend.services.crime_data_service import CrimeDataService
+        self.crime_service = CrimeDataService()
+
     DETERMINISTIC_FALLBACKS = {
         "EXPLANATION": [
             "14 verified harassment & snatching reports in past 30 days within 100m.",
@@ -99,8 +103,9 @@ class OpenAIService:
                 f"- Current Risk: {context.get('risk_score', 'Unknown')}/100 ({context.get('risk_level', 'Unknown')})\n"
                 f"- Recent Community Reports nearby: {context.get('community_reports_count', 0)}\n"
                 f"- Historical Crime Score: {context.get('historical_score', 'Unknown')}\n"
+                f"- Official Delhi Police Historical Women Safety Stats (2012-2022): {self.crime_service.get_women_safety_stats()}\n"
                 f"- Nearest Safe Places: {len(context.get('safe_places', []))} found.\n"
-                "If the user asks if an area is safe, analyze this context. If they ask for recommendations, suggest SafeRoute or Guardian Circle."
+                "If the user asks if an area is safe, analyze this context. If they ask for historical crime or women safety, use the official stats provided. If they ask for recommendations, suggest SafeRoute or Guardian Circle."
             )
             
             resp = await asyncio.to_thread(
@@ -133,8 +138,9 @@ class OpenAIService:
                 f"- Current Risk: {context.get('risk_score', 'Unknown')}/100 ({context.get('risk_level', 'Unknown')})\n"
                 f"- Recent Community Reports nearby: {context.get('community_reports_count', 0)}\n"
                 f"- Historical Crime Score: {context.get('historical_score', 'Unknown')}\n"
+                f"- Official Delhi Police Historical Women Safety Stats (2012-2022): {self.crime_service.get_women_safety_stats()}\n"
                 f"- Nearest Safe Places: {len(context.get('safe_places', []))} found.\n"
-                "If the user asks if an area is safe, analyze this context. If they ask for recommendations, suggest SafeRoute or Guardian Circle."
+                "If the user asks if an area is safe, analyze this context. If they ask for historical crime or women safety, use the official stats provided. If they ask for recommendations, suggest SafeRoute or Guardian Circle."
             )
             
             client = openai.AsyncOpenAI(api_key=settings.OPENAI_API_KEY)

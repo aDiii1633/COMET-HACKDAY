@@ -12,6 +12,7 @@ from backend.core.logging import logger
 
 
 import os
+import json
 
 def load_kaggle_dataset() -> List[Dict[str, Any]]:
     base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -46,6 +47,20 @@ def load_kaggle_dataset() -> List[Dict[str, Any]]:
 
 CRIME_INTELLIGENCE_DB: List[Dict[str, Any]] = load_kaggle_dataset()
 
+def load_delhi_police_caw() -> Dict[str, Any]:
+    base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    dataset_path = os.path.join(base_dir, "data", "delhi_police_caw_historical.json")
+    if not os.path.exists(dataset_path):
+        return {}
+    try:
+        with open(dataset_path, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except Exception as e:
+        logger.error("caw_dataset_parse_error", error=str(e))
+        return {}
+
+CAW_DATA = load_delhi_police_caw()
+
 
 class CrimeDataService:
     """Unified Crime Intelligence Layer — merges Kaggle CSV + data.gov.in + Community Reports."""
@@ -55,6 +70,11 @@ class CrimeDataService:
     def __init__(self):
         self._crime_db = CRIME_INTELLIGENCE_DB
         self.is_historical_data_available = len(self._crime_db) > 0
+        self.caw_data = CAW_DATA
+
+    def get_women_safety_stats(self) -> Dict[str, Any]:
+        """Returns the official Delhi Police Crime Against Women (CAW) dataset."""
+        return self.caw_data
 
     async def fetch_government_crime_data(self, state: str = "Delhi") -> List[Dict[str, Any]]:
         """Fetches crime statistics from data.gov.in open API."""

@@ -20,6 +20,8 @@ export default function Dashboard() {
   const [reports, setReports] = useState<Array<{severity: number, category?: string, type?: string, description: string, status?: string}>>([]);
   const [crimeStats, setCrimeStats] = useState<{total_nearby_crimes: number, avg_severity: number, top_crime_type?: string, is_historical_data_available: boolean} | null>(null);
   const [places, setPlaces] = useState<{nearby_safe_havens: Array<{type: string, name: string}>} | null>(null);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [cawStats, setCawStats] = useState<any>(null);
   const [loadingExtras, setLoadingExtras] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -32,19 +34,21 @@ export default function Dashboard() {
       if (!hasInitialized || lat === null || lng === null) return;
       try {
         setLoadingExtras(true);
-        const [fc, grd, rep, crime, place] = await Promise.all([
+        const [fc, grd, rep, crime, place, caw] = await Promise.all([
           // Only fetch non-risk dependencies
           fetch(`/api/v1/risk/forecast?latitude=${lat}&longitude=${lng}`).then(r => r.ok ? r.json() : null).catch(() => null),
           guardiansApi.list(),
           reportsApi.list(5),
           crimeApi.stats(lat, lng),
-          placesApi.emergencyNearby(lat, lng)
+          placesApi.emergencyNearby(lat, lng),
+          crimeApi.womenSafetyStats().catch(() => null)
         ]);
         if (fc) setForecast(fc);
         setGuardians(grd);
         setReports(rep);
         setCrimeStats(crime);
         setPlaces(place);
+        if (caw && caw.data) setCawStats(caw);
       } catch (e) {
         console.error("Dashboard extras load error:", e);
         setError("Some live data could not be loaded.");
@@ -304,6 +308,58 @@ export default function Dashboard() {
           </Card>
         </motion.div>
       </div>
+
+      {/* Delhi Police Historical Women Safety Intelligence */}
+      <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.45 }}>
+        <Card className="neo-card bg-[#FFFFFF]">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-lg font-bold text-[#172018] flex items-center justify-between">
+              <span className="flex items-center">
+                <ShieldCheck className="h-5 w-5 mr-2 text-[#15803D]" />
+                Delhi Police — Historical Crime Against Women Data
+              </span>
+              <span className="text-[10px] font-bold bg-[#F3F4F6] text-[#4B5563] px-2 py-0.5 rounded-full">2012-2022</span>
+            </CardTitle>
+            <p className="text-xs text-[#6B7280] font-medium">Source: <a href={cawStats?.source_url || "#"} className="text-[#15803D] hover:underline" target="_blank" rel="noreferrer">Delhi Police Official Stats</a>. Historical data — not a realtime incident feed.</p>
+          </CardHeader>
+          <CardContent>
+            {!cawStats ? (
+              <div className="flex items-center justify-center h-20 text-[#6B7280] text-sm"><Loader2 className="h-4 w-4 animate-spin mr-2"/> Loading official data...</div>
+            ) : (
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-2">
+                <div className="bg-[#FEF2F2] border border-[#FECACA] rounded-xl p-3">
+                  <p className="text-xs font-semibold text-[#7F1D1D] mb-1">Rape (376 IPC)</p>
+                  <div className="flex justify-between items-end">
+                    <span className="text-xl font-black text-[#B91C1C]">{cawStats.data["RAPE(376 IPC)"]?.["2022"]}</span>
+                    <span className="text-[10px] font-bold text-[#7F1D1D] opacity-70">cases in 2022</span>
+                  </div>
+                </div>
+                <div className="bg-[#FEF3C7] border border-[#FDE68A] rounded-xl p-3">
+                  <p className="text-xs font-semibold text-[#78350F] mb-1">Assault (354 IPC)</p>
+                  <div className="flex justify-between items-end">
+                    <span className="text-xl font-black text-[#B45309]">{cawStats.data["ASSAULT ON WOMEN WITH INTENT TO OUTRAGE HER MODESTY (354 IPC)"]?.["2022"]}</span>
+                    <span className="text-[10px] font-bold text-[#78350F] opacity-70">cases in 2022</span>
+                  </div>
+                </div>
+                <div className="bg-[#F3F4F6] border border-[#E5E7EB] rounded-xl p-3">
+                  <p className="text-xs font-semibold text-[#172018] mb-1">Kidnapping</p>
+                  <div className="flex justify-between items-end">
+                    <span className="text-xl font-black text-[#4B5563]">{cawStats.data["KIDNAPPING OF WOMEN"]?.["2022"]}</span>
+                    <span className="text-[10px] font-bold text-[#4B5563] opacity-70">cases in 2022</span>
+                  </div>
+                </div>
+                <div className="bg-[#F0F5F1] border border-[#DDE8DF] rounded-xl p-3">
+                  <p className="text-xs font-semibold text-[#14532D] mb-1">Cruelty by Husband</p>
+                  <div className="flex justify-between items-end">
+                    <span className="text-xl font-black text-[#15803D]">{cawStats.data["498-A/406 IPC (CRUELTY BY HUSBAND AND IN LAWS)"]?.["2022"]}</span>
+                    <span className="text-[10px] font-bold text-[#14532D] opacity-70">cases in 2022</span>
+                  </div>
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </motion.div>
 
       {/* Safe Havens Row */}
       <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }}>

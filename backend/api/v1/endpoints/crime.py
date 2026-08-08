@@ -23,3 +23,9 @@ async def get_crime_stats(latitude: float = 28.6139, longitude: float = 77.2090)
 async def fetch_government_data(state: str = "Delhi"):
     """Fetches live government crime data from data.gov.in API."""
     return await _service.fetch_government_crime_data(state)
+
+
+@router.get("/women-safety-stats", response_model=Dict[str, Any])
+async def get_women_safety_stats():
+    """Returns official historical Delhi Police Crime Against Women data."""
+    return _service.get_women_safety_stats()

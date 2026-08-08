@@ -37,7 +37,10 @@ export function useGeminiLive() {
   const mediaStreamRef = useRef<MediaStream | null>(null);
   const nextPlayTimeRef = useRef<number>(0);
   
-  const companion = useCompanionState();
+  const setListening = useCompanionState(state => state.setListening);
+  const setSpeaking = useCompanionState(state => state.setSpeaking);
+  const isSpeaking = useCompanionState(state => state.isSpeaking);
+  const setExpression = useCompanionState(state => state.setExpression);
   const chatStore = useChatStore();
 
   const disconnect = useCallback(() => {
@@ -63,9 +66,9 @@ export function useGeminiLive() {
     }
     setIsConnected(false);
     setIsListening(false);
-    companion.setListening(false);
-    companion.setSpeaking(false);
-  }, [companion]);
+    setListening(false);
+    setSpeaking(false);
+  }, [setListening, setSpeaking]);
 
   useEffect(() => {
     return () => disconnect();
@@ -92,7 +95,7 @@ export function useGeminiLive() {
       audioContextRef.current.close();
       audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 24000 });
       nextPlayTimeRef.current = 0;
-      companion.setSpeaking(false);
+      setSpeaking(false);
       
       // Tell Gemini Live to cancel the current turn
       if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
@@ -103,7 +106,7 @@ export function useGeminiLive() {
         }));
       }
     }
-  }, [companion]);
+  }, [setSpeaking]);
 
   const connectAndListen = useCallback(async () => {
     if (isConnected) return;
@@ -133,7 +136,7 @@ export function useGeminiLive() {
       ws.onopen = () => {
         setIsConnected(true);
         setIsListening(true);
-        companion.setListening(true);
+        setListening(true);
         
         // Start streaming audio
         processor.onaudioprocess = (e) => {
@@ -157,7 +160,7 @@ export function useGeminiLive() {
             }));
             
             // Simple barge-in logic (if user speaks loudly, interrupt playback)
-            if (hasVoice && companion.isSpeaking) {
+            if (hasVoice && isSpeaking) {
               interruptAudio();
             }
           }
@@ -196,11 +199,11 @@ export function useGeminiLive() {
                 source.start(nextPlayTimeRef.current);
                 nextPlayTimeRef.current += buffer.duration;
                 
-                companion.setSpeaking(true);
+                setSpeaking(true);
                 
                 source.onended = () => {
                   if (ctx.currentTime >= nextPlayTimeRef.current - 0.1) {
-                    companion.setSpeaking(false);
+                    setSpeaking(false);
                   }
                 };
               }
@@ -215,7 +218,7 @@ export function useGeminiLive() {
             for (const call of calls) {
               if (call.name === "notify_guardians") {
                 toast.success("Guardians Notified (Tool Called)");
-                companion.setExpression("serious");
+                setExpression("serious");
                 responses.push({
                   id: call.id,
                   name: call.name,
@@ -223,7 +226,7 @@ export function useGeminiLive() {
                 });
               } else if (call.name === "trigger_emergency") {
                 toast.error("Emergency Workflow Activated (Tool Called)");
-                companion.setExpression("serious");
+                setExpression("serious");
                 responses.push({
                   id: call.id,
                   name: call.name,
@@ -258,7 +261,7 @@ export function useGeminiLive() {
       toast.error("Microphone access or live connection failed.");
       disconnect();
     }
-  }, [isConnected, companion, disconnect, isListening, interruptAudio]);
+  }, [isConnected, isListening, interruptAudio, disconnect, setListening, isSpeaking, setSpeaking, setExpression]);
 
   const toggleListening = useCallback(() => {
     if (isConnected) {
@@ -271,11 +274,11 @@ export function useGeminiLive() {
   const triggerEmergencyManually = useCallback(() => {
     toast.error("Emergency manually triggered!");
     sendSystemEvent("EMERGENCY triggered manually by user.");
-    companion.setExpression("serious");
+    setExpression("serious");
     if (window.location.pathname !== "/emergency") {
       window.location.href = "/emergency";
     }
-  }, [sendSystemEvent, companion]);
+  }, [sendSystemEvent, setExpression]);
 
   return {
     isListening,

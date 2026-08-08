@@ -177,6 +177,10 @@ export const crimeApi = {
     const res = await apiClient.get(`/crime/stats?latitude=${lat}&longitude=${lng}`);
     return res.data;
   },
+  async womenSafetyStats() {
+    const res = await apiClient.get(`/crime/women-safety-stats`);
+    return res.data;
+  }
 };
 
 // ========== ROUTES ==========

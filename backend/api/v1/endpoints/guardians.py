@@ -15,6 +15,15 @@ async def list_guardians(
     return await guardian_service.get_user_guardians(user_uid)
 
 
+@router.get("/safe-havens", response_model=List[GuardianResponse])
+async def list_safe_havens(
+    user_uid: str = Depends(get_current_user_uid),
+    guardian_service: GuardianService = Depends(get_guardian_service)
+):
+    """Returns only guardians that have a registered location, serving as Safe Havens."""
+    return await guardian_service.get_safe_havens(user_uid)
+
+
 @router.post("", response_model=GuardianResponse, status_code=status.HTTP_201_CREATED)
 async def add_guardian(
     request: GuardianCreateRequest,

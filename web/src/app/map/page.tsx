@@ -7,6 +7,7 @@ import { Navigation, ShieldAlert, Compass, Loader2, Activity, X, Building2 } fro
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { PlacesAutocomplete } from "@/components/map/PlacesAutocomplete";
+import { SafeHavenOverlay } from "@/components/map/SafeHavenOverlay";
 import { riskApi, crimeApi, reportsApi, routeApi, aiApi } from "@/lib/api/services";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
@@ -137,6 +138,9 @@ export default function MapPage() {
   const [calculatingRoute, setCalculatingRoute] = useState(false);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [routesData, setRoutesData] = useState<any>(null);
+  const [showSafeHavenOverlay, setShowSafeHavenOverlay] = useState(false);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [savedOriginalRoute, setSavedOriginalRoute] = useState<any>(null);
 
   // Area Intelligence State
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -273,6 +277,16 @@ export default function MapPage() {
         </Card>
       </div>
 
+      {/* Quick Action Buttons on Map */}
+      <div className="absolute top-24 right-4 z-10 flex flex-col gap-2">
+        <Button
+          onClick={() => setShowSafeHavenOverlay(true)}
+          className="bg-[#15803D] hover:bg-[#166534] text-[#FFFFFF] font-bold text-xs shadow-lg rounded-full px-4 py-2 flex items-center gap-1.5"
+        >
+          <ShieldAlert className="h-4 w-4 text-[#86EFAC]" /> Safe Havens
+        </Button>
+      </div>
+
       {/* Google Maps */}
       <APIProvider apiKey={apiKey} version="3.64">
         <div className="w-full h-full">
@@ -296,7 +310,6 @@ export default function MapPage() {
             )}
           </GoogleMap>
         </div>
-      </APIProvider>
 
       {/* Safe Route Search Overlay */}
       <AnimatePresence>
@@ -448,6 +461,30 @@ export default function MapPage() {
           </Link>
         </div>
       )}
+        {/* Guardian Safe Haven Drawer */}
+        {showSafeHavenOverlay && (
+          <SafeHavenOverlay
+            currentLat={lat || 28.6139}
+            currentLng={lng || 77.2090}
+            onClose={() => setShowSafeHavenOverlay(false)}
+            onSelectSafeHaven={async (haven) => {
+              if (routesData && !savedOriginalRoute) {
+                setSavedOriginalRoute(routesData);
+              }
+              setShowSafeHavenOverlay(false);
+              toast.success(`Rerouting to Safe Haven: ${haven.name}`);
+              try {
+                const data = await routeApi.calculate(lat || 28.6139, lng || 77.2090, haven.lat, haven.lng);
+                setRoutesData(data);
+                companionState.setExpression("serious");
+                companionState.showSpeech(`Rerouting you safely to ${haven.name}.`, 4000);
+              } catch (e) {
+                toast.error("Failed to calculate safe haven route.");
+              }
+            }}
+          />
+        )}
+      </APIProvider>
     </div>
   );
 }

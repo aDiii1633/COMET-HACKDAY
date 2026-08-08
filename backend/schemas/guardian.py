@@ -8,6 +8,9 @@ class GuardianCreateRequest(BaseModel):
     relation: str = Field(..., min_length=2, max_length=50)
     phone_number: str = Field(..., min_length=10, max_length=15)
     fcm_token: Optional[str] = None
+    latitude: Optional[float] = None
+    longitude: Optional[float] = None
+    address: Optional[str] = None
 
 
 class GuardianResponse(BaseModel):
@@ -17,6 +20,9 @@ class GuardianResponse(BaseModel):
     phone_number: str
     fcm_token: Optional[str] = None
     status: str = "ACTIVE_GUARD"
+    latitude: Optional[float] = None
+    longitude: Optional[float] = None
+    address: Optional[str] = None
     created_at: datetime = Field(default_factory=datetime.utcnow)
 
 
