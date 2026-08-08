@@ -144,7 +144,8 @@ export function SafeHavenOverlay({ currentLat, currentLng, onSelectSafeHaven, on
                   </Button>
                 </div>
               ))
-            )}
+            )
+          )}
         </CardContent>
       </Card>
     </div>
