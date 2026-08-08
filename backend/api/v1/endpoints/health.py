@@ -14,6 +14,7 @@ async def health_check():
         "environment": settings.ENVIRONMENT,
         "services": {
             "risk_engine": "operational",
+            "ai_chat": "operational" if settings.OPENAI_API_KEY else "degraded",
             "gemini_xai": "plugged_in_fallback_ready" if not getattr(settings, "GEMINI_API_KEY", None) else "operational",
             "firebase": "connected",
             "google_maps": "plugged_in_haversine_ready" if not settings.GOOGLE_MAPS_API_KEY else "operational"

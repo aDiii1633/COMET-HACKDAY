@@ -25,6 +25,7 @@ class RiskEvaluationResponse(BaseModel):
     factors: RiskFactorsBreakdown
     xai_reasons: List[str]
     recommendations: List[str]
+    is_historical_data_available: bool = True
     timestamp: datetime = Field(default_factory=datetime.utcnow)
 
 

@@ -159,8 +159,13 @@ class OpenAIService:
             yield "data: [DONE]\n\n"
             
         except Exception as e:
-            logger.error("openai_chat_stream_error", error=str(e))
-            yield "data: [ERROR]\n\n"
+            error_msg = str(e)
+            logger.error("openai_chat_stream_error", error=error_msg)
+            if "429" in error_msg or "insufficient_quota" in error_msg or "credit_balance" in error_msg:
+                yield "data: I'm temporarily unable to respond — the AI service quota has been exhausted. Please try again later or contact the administrator.\n\n"
+            else:
+                yield "data: I encountered an error while processing your request. Please try again.\n\n"
+            yield "data: [DONE]\n\n"
 
     async def voice_chat_assistant(self, chat_history: List[Dict[str, str]], context: Dict[str, Any]) -> Dict[str, Any]:
         """

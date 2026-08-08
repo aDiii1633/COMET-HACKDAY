@@ -9,12 +9,16 @@ export function FloatingVoiceAgent() {
   const { isListening, isProcessing, toggleListening, triggerEmergencyManually } = useVoiceAgent();
   const [pressTimer, setPressTimer] = useState<NodeJS.Timeout | null>(null);
   const [isPressing, setIsPressing] = useState(false);
+  const pressStartRef = useRef<number>(0);
+  const longPressTriggeredRef = useRef<boolean>(false);
 
   const handlePointerDown = () => {
     setIsPressing(true);
+    pressStartRef.current = Date.now();
+    longPressTriggeredRef.current = false;
     const timer = setTimeout(() => {
+      longPressTriggeredRef.current = true;
       triggerEmergencyManually();
-      setIsPressing(false);
     }, 1500); // 1.5 seconds long press
     setPressTimer(timer);
   };
@@ -28,8 +32,8 @@ export function FloatingVoiceAgent() {
   };
 
   const handleClick = () => {
-    // If it wasn't a long press, toggle listening
-    if (isPressing) {
+    // Only toggle listening if it was a short click, not a long press
+    if (!longPressTriggeredRef.current) {
       toggleListening();
     }
   };

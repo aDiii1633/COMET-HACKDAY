@@ -1,5 +1,17 @@
 import { apiClient } from "./axios";
 
+// ========== HEALTH ==========
+export const healthApi = {
+  async check(): Promise<{ status: string; services: { ai_chat: string } }> {
+    try {
+      const res = await apiClient.get("/health");
+      return res.data;
+    } catch {
+      return { status: "offline", services: { ai_chat: "offline" } };
+    }
+  }
+};
+
 // ========== RISK ENGINE ==========
 export const riskApi = {
   async evaluate(lat: number, lng: number, timeOffset: number = 0) {

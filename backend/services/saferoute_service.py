@@ -117,11 +117,17 @@ class SafeRouteService:
 
             # Generate XAI for the routes
             safest_context = {"risk_score": safest.risk_score, "risk_level": safest.risk_level, "community_reports_count": 0, "historical_score": safest.risk_score * 0.5, "safe_places": []}
-            safest.xai_summary = await self.openai_service.chat_assistant("Explain why this route is safe in one short sentence.", safest_context)
+            if not self.risk_engine.crime_service.is_historical_data_available:
+                safest.xai_summary = "Insufficient verified data — historical crime dataset unavailable."
+            else:
+                safest.xai_summary = await self.openai_service.chat_assistant("Explain why this route is safe in one short sentence.", safest_context)
             
             if alternatives:
                 fastest_context = {"risk_score": alternatives[0].risk_score, "risk_level": alternatives[0].risk_level, "community_reports_count": 2, "historical_score": alternatives[0].risk_score * 0.5, "safe_places": []}
-                alternatives[0].xai_summary = await self.openai_service.chat_assistant("Explain why this route has higher risk in one short sentence.", fastest_context)
+                if not self.risk_engine.crime_service.is_historical_data_available:
+                    alternatives[0].xai_summary = "Insufficient verified data — historical crime dataset unavailable."
+                else:
+                    alternatives[0].xai_summary = await self.openai_service.chat_assistant("Explain why this route has higher risk in one short sentence.", fastest_context)
 
             delta = 0
             if alternatives:

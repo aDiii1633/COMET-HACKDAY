@@ -393,7 +393,11 @@ export default function MapPage() {
                     </div>
                     <div className="flex justify-between items-center">
                       <span className="text-sm text-[#4B5563] font-medium">Historical Records</span>
-                      <span className="font-semibold text-[#172018]">{selectedArea.stats.total_nearby_crimes} records</span>
+                      {selectedArea.stats.is_historical_data_available ? (
+                        <span className="font-semibold text-[#172018]">{selectedArea.stats.total_nearby_crimes} records</span>
+                      ) : (
+                        <span className="text-xs font-semibold text-[#B91C1C]">Historical crime dataset unavailable.</span>
+                      )}
                     </div>
                     <div className="bg-[#DCFCE7] border border-[#86EFAC] p-3 rounded-lg mt-2">
                       <p className="text-xs text-[#14532D] leading-relaxed flex items-start font-medium">

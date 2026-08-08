@@ -54,6 +54,7 @@ class CrimeDataService:
 
     def __init__(self):
         self._crime_db = CRIME_INTELLIGENCE_DB
+        self.is_historical_data_available = len(self._crime_db) > 0
 
     async def fetch_government_crime_data(self, state: str = "Delhi") -> List[Dict[str, Any]]:
         """Fetches crime statistics from data.gov.in open API."""
@@ -138,6 +139,7 @@ class CrimeDataService:
             "category_breakdown": categories,
             "top_crime_type": max(categories, key=categories.get) if categories else "NONE",
             "historical_score": self.calculate_historical_crime_score(latitude, longitude),
+            "is_historical_data_available": self.is_historical_data_available
         }
 
     @staticmethod

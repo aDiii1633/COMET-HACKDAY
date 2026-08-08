@@ -129,5 +129,6 @@ class RiskEngineService:
                 historical_score=historical_score
             ),
             xai_reasons=reasons,
-            recommendations=recommendations
+            recommendations=recommendations,
+            is_historical_data_available=self.crime_service.is_historical_data_available
         )

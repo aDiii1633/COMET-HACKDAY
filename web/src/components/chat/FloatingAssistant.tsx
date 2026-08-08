@@ -6,7 +6,7 @@ import { X, Send, Loader2, Bot, User } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { aiApi, riskApi } from "@/lib/api/services";
+import { aiApi, healthApi } from "@/lib/api/services";
 import toast from "react-hot-toast";
 import dynamic from "next/dynamic";
 import { useCompanionState } from "@/store/useCompanionState";
@@ -31,6 +31,7 @@ export function FloatingAssistant() {
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
+  const [aiStatus, setAiStatus] = useState<'checking' | 'online' | 'degraded' | 'offline'>('checking');
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const { setExpression, triggerGesture, showSpeech, setChatMode } = useCompanionState();
@@ -57,6 +58,18 @@ export function FloatingAssistant() {
     }
   }, [isOpen, setChatMode, setExpression, triggerGesture, showSpeech]);
 
+  // Check AI service health when chat opens
+  useEffect(() => {
+    if (isOpen) {
+      setAiStatus('checking');
+      healthApi.check().then((data) => {
+        if (data.services?.ai_chat === 'operational') setAiStatus('online');
+        else if (data.status === 'online') setAiStatus('degraded');
+        else setAiStatus('offline');
+      }).catch(() => setAiStatus('offline'));
+    }
+  }, [isOpen]);
+
   const handleSend = async () => {
     if (!input.trim() || loading || isTyping) return;
     
@@ -74,8 +87,7 @@ export function FloatingAssistant() {
     addMessage({ id: assistantMsgId, role: "assistant", text: "" });
 
     try {
-      // Gather context non-blockingly
-      // Gather context non-blockingly using global store
+      // Gather context using global store
       let context: any = {};
       if (lat !== null && lng !== null && riskData) {
         context = {
@@ -86,11 +98,11 @@ export function FloatingAssistant() {
         };
       }
       
-      
       setLoading(false);
       setIsTyping(true);
 
       let currentText = "";
+      let streamFailed = false;
       
       await aiApi.chatStream(
         userText, 
@@ -106,17 +118,34 @@ export function FloatingAssistant() {
           setExpression("happy");
           triggerGesture("none");
         },
-        (err: any) => {
-          console.error("Stream error:", err);
-          toast.error("Connection interrupted.");
-          setIsTyping(false);
-          setExpression("concerned");
+        async (err: any) => {
+          // Stream failed — fall back to non-streaming chat
+          console.warn("Stream failed, falling back to non-streaming chat:", err);
+          streamFailed = true;
         }
       );
 
+      // If stream failed, try the non-streaming endpoint as fallback
+      if (streamFailed) {
+        try {
+          const reply = await aiApi.chat(userText, context);
+          updateMessage(assistantMsgId, reply);
+          setIsTyping(false);
+          setExpression("happy");
+          triggerGesture("none");
+        } catch (fallbackErr) {
+          console.error("Non-streaming fallback also failed:", fallbackErr);
+          updateMessage(assistantMsgId, "I'm having trouble connecting to the AI service right now. The service may be temporarily unavailable. Please try again later.");
+          toast.error("AI service temporarily unavailable.");
+          setIsTyping(false);
+          setExpression("concerned");
+        }
+      }
+
     } catch (e) {
-      toast.error("Failed to connect to AI Assistant.");
+      console.error("Chat send failed:", e);
       updateMessage(assistantMsgId, "I'm having trouble connecting right now. Please try again later.");
+      toast.error("Failed to connect to AI Assistant.");
       setExpression("concerned");
       setLoading(false);
       setIsTyping(false);
@@ -138,8 +167,11 @@ export function FloatingAssistant() {
               <CardHeader className="p-0 border-b border-[#DDE8DF] bg-[#F0FDF4] overflow-hidden">
                 <div className="flex items-center justify-between px-4 pt-3 pb-1">
                   <CardTitle className="text-[#172018] text-sm font-bold flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full bg-[#15803D]"></span>
+                    <span className={`w-2 h-2 rounded-full ${aiStatus === 'online' ? 'bg-[#15803D]' : aiStatus === 'degraded' ? 'bg-[#F59E0B]' : aiStatus === 'checking' ? 'bg-[#9CA3AF] animate-pulse' : 'bg-[#B91C1C]'}`}></span>
                     SafeSphere AI Assistant
+                    <span className={`text-[10px] font-medium uppercase ${aiStatus === 'online' ? 'text-[#15803D]' : aiStatus === 'degraded' ? 'text-[#F59E0B]' : aiStatus === 'checking' ? 'text-[#9CA3AF]' : 'text-[#B91C1C]'}`}>
+                      {aiStatus}
+                    </span>
                   </CardTitle>
                   <Button variant="ghost" size="icon" className="h-7 w-7 text-[#6B7280] hover:text-[#172018] hover:bg-[#DCFCE7]" onClick={() => setIsOpen(false)}>
                     <X className="h-4 w-4" />

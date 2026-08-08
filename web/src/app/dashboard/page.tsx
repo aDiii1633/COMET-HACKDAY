@@ -18,7 +18,7 @@ export default function Dashboard() {
   const [forecast, setForecast] = useState<{forecasts: Array<{forecast_risk_score: number, risk_level: string}>} | null>(null);
   const [guardians, setGuardians] = useState<Array<{name: string, relation: string}>>([]);
   const [reports, setReports] = useState<Array<{severity: number, category?: string, type?: string, description: string, status?: string}>>([]);
-  const [crimeStats, setCrimeStats] = useState<{total_nearby_crimes: number, avg_severity: number, top_crime_type?: string} | null>(null);
+  const [crimeStats, setCrimeStats] = useState<{total_nearby_crimes: number, avg_severity: number, top_crime_type?: string, is_historical_data_available: boolean} | null>(null);
   const [places, setPlaces] = useState<{nearby_safe_havens: Array<{type: string, name: string}>} | null>(null);
   const [loadingExtras, setLoadingExtras] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -247,18 +247,27 @@ export default function Dashboard() {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
-              <div className="grid grid-cols-2 gap-3">
-                <div className="bg-[#F0F5F1] rounded-xl p-3.5 border border-[#DDE8DF] text-center">
-                  <p className="text-2xl font-black text-[#172018]">{crimeStats?.total_nearby_crimes ?? 0}</p>
-                  <p className="text-xs font-semibold text-[#4B5563]">Nearby Records</p>
+              {crimeStats && !crimeStats.is_historical_data_available ? (
+                <div className="bg-[#FEF2F2] border border-[#FECACA] rounded-xl p-4 text-center">
+                  <p className="text-sm font-semibold text-[#B91C1C]">Historical crime dataset unavailable.</p>
+                  <p className="text-xs text-[#7F1D1D] mt-1">No verified historical crime records available for this area.</p>
                 </div>
-                <div className="bg-[#F0F5F1] rounded-xl p-3.5 border border-[#DDE8DF] text-center">
-                  <p className="text-2xl font-black text-[#172018]">{crimeStats?.avg_severity ?? 0}</p>
-                  <p className="text-xs font-semibold text-[#4B5563]">Avg Severity</p>
-                </div>
-              </div>
-              {crimeStats?.top_crime_type && crimeStats.top_crime_type !== "NONE" && (
-                <p className="text-xs text-[#4B5563] font-medium">Most prevalent: <span className="text-[#B45309] font-semibold">{crimeStats.top_crime_type.replace("_", " ")}</span></p>
+              ) : (
+                <>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="bg-[#F0F5F1] rounded-xl p-3.5 border border-[#DDE8DF] text-center">
+                      <p className="text-2xl font-black text-[#172018]">{crimeStats?.total_nearby_crimes ?? 0}</p>
+                      <p className="text-xs font-semibold text-[#4B5563]">Nearby Records</p>
+                    </div>
+                    <div className="bg-[#F0F5F1] rounded-xl p-3.5 border border-[#DDE8DF] text-center">
+                      <p className="text-2xl font-black text-[#172018]">{crimeStats?.avg_severity ?? 0}</p>
+                      <p className="text-xs font-semibold text-[#4B5563]">Avg Severity</p>
+                    </div>
+                  </div>
+                  {crimeStats?.top_crime_type && crimeStats.top_crime_type !== "NONE" && (
+                    <p className="text-xs text-[#4B5563] font-medium">Most prevalent: <span className="text-[#B45309] font-semibold">{crimeStats.top_crime_type.replace("_", " ")}</span></p>
+                  )}
+                </>
               )}
             </CardContent>
           </Card>
