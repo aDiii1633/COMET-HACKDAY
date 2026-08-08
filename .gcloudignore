@@ -1,0 +1,10 @@
+.gcloudignore
+.git
+.gitignore
+web/
+node_modules/
+venv/
+.venv/
+.next/
+.vite/
+*.log
