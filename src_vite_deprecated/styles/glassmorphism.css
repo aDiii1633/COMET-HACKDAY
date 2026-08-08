@@ -1,0 +1,100 @@
+/* SafeSphere AI — Glassmorphism & Visual Tokens System */
+
+:root {
+  /* Base Backgrounds & Surfaces */
+  --color-bg-base: #050507;
+  --color-bg-surface: #0D0E15;
+  --color-bg-card: rgba(18, 20, 31, 0.70);
+  --color-border-glass: rgba(255, 255, 255, 0.09);
+  --color-border-glass-glow: rgba(99, 102, 241, 0.30);
+
+  /* Brand Colors */
+  --color-brand-primary: #6366F1;
+  --color-brand-glow: rgba(99, 102, 241, 0.25);
+
+  /* Risk Scoring Palette */
+  --color-risk-safe: #10B981;
+  --color-risk-safe-glow: rgba(16, 185, 129, 0.25);
+
+  --color-risk-warning: #F59E0B;
+  --color-risk-warning-glow: rgba(245, 158, 11, 0.25);
+
+  --color-risk-danger: #EF4444;
+  --color-risk-danger-glow: rgba(239, 68, 68, 0.35);
+}
+
+/* Glassmorphic Container Cards */
+.glass-card {
+  background: var(--color-bg-card);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid var(--color-border-glass);
+  border-radius: 24px;
+  box-shadow: 0 12px 40px 0 rgba(0, 0, 0, 0.6);
+}
+
+.glass-card-interactive {
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.glass-card-interactive:hover {
+  border-color: rgba(255, 255, 255, 0.18);
+  box-shadow: 0 16px 48px 0 rgba(0, 0, 0, 0.7), 0 0 20px 0 var(--color-brand-glow);
+  transform: translateY(-2px);
+}
+
+.glass-card-danger {
+  background: rgba(35, 12, 18, 0.85);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  box-shadow: 0 12px 40px 0 rgba(239, 68, 68, 0.2);
+}
+
+.glass-pill {
+  background: rgba(255, 255, 255, 0.06);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 9999px;
+}
+
+/* Custom Pulsing Safety Indicators */
+@keyframes pulse-radial {
+  0% {
+    box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.4);
+  }
+  70% {
+    box-shadow: 0 0 0 16px rgba(99, 102, 241, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(99, 102, 241, 0);
+  }
+}
+
+.pulse-primary {
+  animation: pulse-radial 2s infinite;
+}
+
+@keyframes pulse-danger {
+  0% {
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.6);
+  }
+  70% {
+    box-shadow: 0 0 0 20px rgba(239, 68, 68, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);
+  }
+}
+
+.pulse-danger {
+  animation: pulse-danger 1.5s infinite;
+}
+
+/* Hide Scrollbars cleanly for custom sheet navigation */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}

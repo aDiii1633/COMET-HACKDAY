@@ -1,0 +1,241 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+@theme inline {
+  --color-background: var(--background);
+  --color-secondary-bg: var(--secondary-bg);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-sans);
+  --font-mono: var(--font-geist-mono);
+  --font-heading: var(--font-sans);
+  
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary-hover: var(--primary-hover);
+  --color-primary-active: var(--primary-active);
+
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  
+  --color-border: var(--border);
+  --color-hover-border: var(--hover-border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  
+  /* Central Palette Extensions */
+  --color-green-primary: #15803D;
+  --color-green-secondary: #16A34A;
+  --color-green-accent: #22C55E;
+  --color-green-light: #DCFCE7;
+  --color-green-very-light: #F0FDF4;
+  --color-green-dark: #166534;
+  --color-green-deepest: #14532D;
+
+  /* Semantic Risk Colors */
+  --color-risk-safe: var(--risk-safe);
+  --color-risk-safe-bg: #DCFCE7;
+  --color-risk-safe-text: #14532D;
+  
+  --color-risk-medium: var(--risk-medium);
+  --color-risk-medium-bg: #FEF3C7;
+  --color-risk-medium-text: #78350F;
+  
+  --color-risk-danger: var(--risk-danger);
+  --color-risk-danger-bg: #FEE2E2;
+  --color-risk-danger-text: #7F1D1D;
+
+  --color-risk-critical: #991B1B;
+  --color-risk-critical-bg: #FECACA;
+  --color-risk-critical-text: #7F1D1D;
+  
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+}
+
+:root {
+  /* Master Palette */
+  --background: #F7F9F7;
+  --secondary-bg: #F0F5F1;
+  --foreground: #172018;
+
+  --card: #FFFFFF;
+  --card-foreground: #172018;
+
+  --popover: #FFFFFF;
+  --popover-foreground: #172018;
+
+  /* Deep Professional Primary Green */
+  --primary: #15803D;
+  --primary-foreground: #FFFFFF;
+  --primary-hover: #166534;
+  --primary-active: #14532D;
+
+  --secondary: #F0FDF4;
+  --secondary-foreground: #14532D;
+
+  --muted: #F0FDF4;
+  --muted-foreground: #6B7280;
+
+  --accent: #22C55E;
+  --accent-foreground: #FFFFFF;
+
+  --text-primary: #172018;
+  --text-secondary: #4B5563;
+  --text-muted: #6B7280;
+  --text-disabled: #9CA3AF;
+
+  /* Semantic Colors */
+  --risk-safe: #15803D;
+  --risk-medium: #B45309;
+  --risk-danger: #B91C1C;
+  --risk-critical: #991B1B;
+
+  --border: #DDE8DF;
+  --hover-border: #86EFAC;
+  --input: #FFFFFF;
+  --ring: #22C55E;
+
+  --radius: 0.75rem;
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground antialiased font-sans;
+    color: var(--text-primary);
+    background-color: var(--background);
+  }
+  
+  :focus-visible {
+    outline: 2px solid #22C55E;
+    outline-offset: 2px;
+  }
+}
+
+@layer utilities {
+  /* Soft Neomorphic Utilities */
+  .neo-card {
+    background-color: #FFFFFF;
+    border: 1px solid #DDE8DF;
+    border-radius: 1rem;
+    box-shadow: 0 8px 30px rgba(21, 128, 61, 0.05);
+    transition: all 200ms ease-in-out;
+  }
+  
+  .neo-card-hover:hover {
+    border-color: #86EFAC;
+    box-shadow: 0 12px 35px rgba(21, 128, 61, 0.09);
+    transform: translateY(-2px);
+  }
+  
+  .neo-button {
+    background-color: #15803D;
+    color: #FFFFFF;
+    font-weight: 600;
+    border-radius: 0.75rem;
+    box-shadow: 0 4px 14px rgba(21, 128, 61, 0.2);
+    transition: all 200ms ease-in-out;
+  }
+  
+  .neo-button:hover {
+    background-color: #166534;
+    box-shadow: 0 6px 18px rgba(21, 128, 61, 0.3);
+    transform: translateY(-1px);
+  }
+
+  .neo-button:active {
+    background-color: #14532D;
+    transform: translateY(0);
+  }
+  
+  .neo-input {
+    background-color: #FFFFFF;
+    border: 1px solid #DDE8DF;
+    border-radius: 0.75rem;
+    color: #172018;
+    transition: all 200ms ease-in-out;
+  }
+
+  .neo-input::placeholder {
+    color: #6B7280;
+  }
+
+  .neo-input:hover {
+    border-color: #86EFAC;
+  }
+
+  .neo-input:focus {
+    border-color: #16A34A;
+    box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.18);
+    outline: none;
+  }
+
+  .glass {
+    background-color: rgba(255, 255, 255, 0.9);
+    backdrop-filter: blur(16px);
+    border: 1px solid #DDE8DF;
+    box-shadow: 0 8px 30px rgba(21, 128, 61, 0.05);
+  }
+  
+  .glass-card {
+    background-color: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(16px);
+    border: 1px solid #DDE8DF;
+    border-radius: 1rem;
+    box-shadow: 0 8px 30px rgba(21, 128, 61, 0.05);
+    transition: all 200ms ease-in-out;
+  }
+  
+  .glass-card:hover {
+    border-color: #86EFAC;
+    box-shadow: 0 12px 35px rgba(21, 128, 61, 0.09);
+    transform: translateY(-2px);
+  }
+  
+  .text-gradient {
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-[#15803D] via-[#16A34A] to-[#22C55E];
+  }
+  
+  /* Skeleton Loading */
+  .skeleton {
+    @apply relative overflow-hidden bg-[#F0F5F1] rounded-xl;
+  }
+  .skeleton::after {
+    content: "";
+    @apply absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/60 to-transparent animate-[shimmer_1.5s_infinite];
+  }
+  
+  /* Custom Pulse Animations for UI */
+  .animate-slow-pulse {
+    animation: slow-pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+}
+
+@keyframes gradient {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+@keyframes shimmer {
+  100% { transform: translateX(100%); }
+}
+
+@keyframes slow-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.85; transform: scale(0.98); }
+}
