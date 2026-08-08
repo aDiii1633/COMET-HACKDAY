@@ -129,7 +129,9 @@ export function useGeminiLive() {
       processor.connect(audioInputContextRef.current.destination);
 
       // 4. Connect WebSocket
-      const wsUrl = `ws://localhost:8000/api/v1/ai/live-session`;
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8000/api/v1";
+      const wsProtocol = backendUrl.startsWith("https") ? "wss" : "ws";
+      const wsUrl = `${backendUrl.replace(/^https?/, wsProtocol)}/ai/live-session`;
       const ws = new WebSocket(wsUrl);
       wsRef.current = ws;
 

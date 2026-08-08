@@ -16,7 +16,7 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
 # Environment variables must be present at build time
-ENV NEXT_PUBLIC_API_URL=https://safesphere-backend-783651516756.us-central1.run.app
+ENV NEXT_PUBLIC_BACKEND_URL=https://safesphere-backend-783651516756.us-central1.run.app/api/v1
 
 RUN npm run build
 

@@ -110,7 +110,8 @@ export const aiApi = {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   async chatStream(message: string, context: any, onChunk: (text: string) => void, onComplete: () => void, onError: (err: any) => void) {
     try {
-      const response = await fetch("http://localhost:8000/api/v1/ai/chat-stream", {
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8000/api/v1";
+      const response = await fetch(`${backendUrl}/ai/chat-stream`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ message, context })
