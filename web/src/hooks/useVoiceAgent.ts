@@ -4,6 +4,7 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { aiApi, riskApi, emergencyApi, guardiansApi } from "@/lib/api/services";
 import { useCompanionState } from "@/store/useCompanionState";
 import { useChatStore } from "@/store/useChatStore";
+import { useLocationStore } from "@/store/useLocationStore";
 import toast from "react-hot-toast";
 
 export function useVoiceAgent() {
@@ -17,6 +18,7 @@ export function useVoiceAgent() {
 
   const companion = useCompanionState();
   const chatStore = useChatStore();
+  const { lat: storeLat, lng: storeLng, riskData } = useLocationStore();
 
   useEffect(() => {
     // Cleanup on unmount
@@ -111,28 +113,18 @@ export function useVoiceAgent() {
     companion.triggerGesture("thinking");
 
     try {
-      // 1. Gather Context
-      let context = {};
-      let lat = 28.6139;
-      let lng = 77.2090;
+      // 1. Gather Context non-blockingly
+      let context: any = {};
+      const lat = storeLat || 28.6139;
+      const lng = storeLng || 77.2090;
 
-      if (navigator.geolocation) {
-        try {
-          const pos = await new Promise<GeolocationPosition>((resolve, reject) => {
-            navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 3000 });
-          });
-          lat = pos.coords.latitude;
-          lng = pos.coords.longitude;
-          const risk = await riskApi.evaluate(lat, lng);
-          context = {
-            risk_score: risk.risk_score,
-            risk_level: risk.risk_level,
-            lat,
-            lng
-          };
-        } catch (e) {
-          console.warn("Geolocation failed during voice chat");
-        }
+      if (riskData) {
+        context = {
+          risk_score: riskData.risk_score,
+          risk_level: riskData.risk_level,
+          lat,
+          lng
+        };
       }
 
       // 2. Call backend Voice-Process API

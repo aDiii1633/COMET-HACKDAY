@@ -6,7 +6,8 @@ import { MessageSquare, X, Send, Bot, Loader2 } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { aiApi, riskApi, crimeApi } from "@/lib/api/services";
+import { aiApi } from "@/lib/api/services";
+import { useLocationStore } from "@/store/useLocationStore";
 
 export default function AIAssistantWidget() {
   const [isOpen, setIsOpen] = useState(false);
@@ -16,6 +17,7 @@ export default function AIAssistantWidget() {
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const { lat, lng, riskData } = useLocationStore();
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -31,19 +33,11 @@ export default function AIAssistantWidget() {
 
     try {
       // Gather context
-      const lat = 28.6139;
-      const lng = 77.2090;
-      const [risk, crime] = await Promise.all([
-        riskApi.evaluate(lat, lng),
-        crimeApi.stats(lat, lng)
-      ]);
-
       const context = {
-        risk_score: risk.risk_score,
-        risk_level: risk.risk_level,
-        community_reports_count: crime.total_nearby_crimes,
-        historical_score: crime.historical_score,
-        safe_places: ["Police Station 1", "City Hospital"] // mocked for context length
+        risk_score: riskData?.risk_score || 50,
+        risk_level: riskData?.risk_level || "WARNING",
+        lat,
+        lng
       };
 
       const reply = await aiApi.chat(userMessage, context);

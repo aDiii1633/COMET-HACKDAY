@@ -12,6 +12,7 @@ import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import toast from "react-hot-toast";
 import { useCompanionState } from "@/store/useCompanionState";
+import { useLocationStore } from "@/store/useLocationStore";
 
 const MAP_ID = "DEMO_MAP_ID";
 
@@ -105,17 +106,26 @@ function PolylineLayer({ coords, color }: { coords: number[][], color: string })
       }
     };
   }, [map, coords, color]);
+
+  // Fit bounds to polyline
+  useEffect(() => {
+    if (!map || !window.google || !coords || coords.length === 0) return;
+    const bounds = new google.maps.LatLngBounds();
+    coords.forEach(c => {
+      bounds.extend(new google.maps.LatLng(c[1], c[0]));
+    });
+    map.fitBounds(bounds);
+  }, [map, coords]);
+
   return null;
 }
 
 export default function MapPage() {
-  const [center, setCenter] = useState({ lat: 28.6139, lng: 77.2090 });
-  const [zoom, setZoom] = useState(14);
+  const { lat, lng, address: locationName, riskData, initializeLocation, hasInitialized } = useLocationStore();
   const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "";
-  const [riskData, setRiskData] = useState<{risk_score: number, risk_level: string} | null>(null);
   const [crimes, setCrimes] = useState<Array<{lat: number, lng: number, severity: number}>>([]);
   const [reports, setReports] = useState<Array<{latitude: number, longitude: number, severity: number}>>([]);
-  const [loading, setLoading] = useState(true);
+  const [loadingExtras, setLoadingExtras] = useState(true);
   const companionState = useCompanionState();
   console.log("CLIENT API KEY:", apiKey);
 
@@ -131,42 +141,29 @@ export default function MapPage() {
   const [selectedArea, setSelectedArea] = useState<any>(null);
 
   useEffect(() => {
-    async function fetchMapData(lat: number, lng: number) {
+    initializeLocation();
+  }, [initializeLocation]);
+
+  useEffect(() => {
+    async function fetchMapData() {
+      if (!hasInitialized || lat === null || lng === null) return;
       try {
-        const [risk, crimeData, repData] = await Promise.all([
-          riskApi.evaluate(lat, lng),
+        setLoadingExtras(true);
+        const [crimeData, repData] = await Promise.all([
           crimeApi.nearby(lat, lng, 5),
           reportsApi.list(20),
         ]);
-        setRiskData(risk);
         setCrimes(crimeData);
         setReports(repData);
       } catch (e) {
         console.error("Map data load error:", e);
       } finally {
-        setLoading(false);
+        setLoadingExtras(false);
       }
     }
-
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          const lat = position.coords.latitude;
-          const lng = position.coords.longitude;
-          setCenter({ lat, lng });
-          fetchMapData(lat, lng);
-        },
-        (error) => {
-          console.warn("Geolocation denied or failed, using default center.", error);
-          fetchMapData(center.lat, center.lng);
-        },
-        { timeout: 10000 }
-      );
-    } else {
-      fetchMapData(center.lat, center.lng);
-    }
+    fetchMapData();
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [hasInitialized, lat, lng]);
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const handleMapClick = async (e: any) => {
@@ -203,10 +200,9 @@ export default function MapPage() {
     try {
       const destLat = destCoords.lat;
       const destLng = destCoords.lng;
-      const data = await routeApi.calculate(center.lat, center.lng, destLat, destLng);
+      const data = await routeApi.calculate(lat || 28.6139, lng || 77.2090, destLat, destLng);
       setRoutesData(data);
       setShowSearch(false);
-      setZoom(13);
       companionState.setExpression("happy");
       companionState.triggerGesture("point", 3000);
       companionState.showSpeech("This is the safest route!", 4000);
@@ -233,6 +229,8 @@ export default function MapPage() {
   const riskLevel = riskData?.risk_level ?? "SAFE";
   const riskScore = riskData?.risk_score ?? 0;
   const riskColor = riskLevel === "SAFE" ? "text-[#14532D]" : riskLevel === "WARNING" ? "text-[#78350F]" : "text-[#7F1D1D]";
+  const loading = !hasInitialized || loadingExtras;
+  const center = { lat: lat || 28.6139, lng: lng || 77.2090 };
 
   return (
     <div className="flex flex-col h-[calc(100vh-120px)] md:h-[calc(100vh-100px)] relative overflow-hidden rounded-2xl border border-[#DDE8DF] shadow-md bg-[#FFFFFF]">
@@ -257,8 +255,8 @@ export default function MapPage() {
       <APIProvider apiKey={apiKey} version="3.64">
         <div className="w-full h-full">
           <GoogleMap 
-            defaultCenter={center} 
-            defaultZoom={zoom} 
+            center={center} 
+            defaultZoom={14} 
             disableDefaultUI={true} 
             gestureHandling="greedy"
             onClick={handleMapClick}
@@ -288,6 +286,11 @@ export default function MapPage() {
                   <h3 className="font-bold text-[#172018]">Where to?</h3>
                   <Button variant="ghost" size="icon" className="h-7 w-7 text-[#6B7280] hover:text-[#172018]" onClick={() => setShowSearch(false)}><X className="h-4 w-4" /></Button>
                 </div>
+                <Input 
+                  value={locationName ? `Current Location: ${locationName}` : "Detecting current location..."}
+                  disabled
+                  className="bg-[#F3F4F6] text-[#4B5563] font-medium"
+                />
                 <PlacesAutocomplete 
                   onPlaceSelect={(place) => {
                     if (place && place.geometry && place.geometry.location) {

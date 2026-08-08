@@ -11,6 +11,7 @@ import toast from "react-hot-toast";
 import dynamic from "next/dynamic";
 import { useCompanionState } from "@/store/useCompanionState";
 import { useChatStore } from "@/store/useChatStore";
+import { useLocationStore } from "@/store/useLocationStore";
 
 // Lazy load the 3D companion for performance
 const SafeSphereCompanion = dynamic(
@@ -33,6 +34,7 @@ export function FloatingAssistant() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const { setExpression, triggerGesture, showSpeech, setChatMode } = useCompanionState();
+  const { lat, lng, riskData } = useLocationStore();
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -73,23 +75,17 @@ export function FloatingAssistant() {
 
     try {
       // Gather context non-blockingly
-      let context = {};
-      if (navigator.geolocation) {
-        try {
-          const pos = await new Promise<GeolocationPosition>((resolve, reject) => {
-            navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 3000 });
-          });
-          const risk = await riskApi.evaluate(pos.coords.latitude, pos.coords.longitude);
-          context = {
-            risk_score: risk.risk_score,
-            risk_level: risk.risk_level,
-            lat: pos.coords.latitude,
-            lng: pos.coords.longitude
-          };
-        } catch (e) {
-          console.warn("Could not get geolocation for context. Proceeding without spatial context.");
-        }
+      // Gather context non-blockingly using global store
+      let context: any = {};
+      if (lat !== null && lng !== null && riskData) {
+        context = {
+          risk_score: riskData.risk_score,
+          risk_level: riskData.risk_level,
+          lat,
+          lng
+        };
       }
+      
       
       setLoading(false);
       setIsTyping(true);

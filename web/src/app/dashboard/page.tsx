@@ -7,81 +7,63 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { useAuthStore } from "@/store/useAuthStore";
-import { riskApi, guardiansApi, reportsApi, crimeApi, placesApi } from "@/lib/api/services";
+import { useLocationStore } from "@/store/useLocationStore";
+import { guardiansApi, reportsApi, crimeApi, placesApi } from "@/lib/api/services";
 import { useCompanionState } from "@/store/useCompanionState";
 
 export default function Dashboard() {
   const { user } = useAuthStore();
   const { setExpression, triggerGesture, showSpeech } = useCompanionState();
-  const [riskData, setRiskData] = useState<{risk_score: number, risk_level: string, xai_reasons?: string[], confidence?: number} | null>(null);
+  const { lat, lng, address: locationName, riskData, isRiskLoading, hasInitialized, initializeLocation } = useLocationStore();
   const [forecast, setForecast] = useState<{forecasts: Array<{forecast_risk_score: number, risk_level: string}>} | null>(null);
   const [guardians, setGuardians] = useState<Array<{name: string, relation: string}>>([]);
   const [reports, setReports] = useState<Array<{severity: number, category?: string, type?: string, description: string, status?: string}>>([]);
   const [crimeStats, setCrimeStats] = useState<{total_nearby_crimes: number, avg_severity: number, top_crime_type?: string} | null>(null);
   const [places, setPlaces] = useState<{nearby_safe_havens: Array<{type: string, name: string}>} | null>(null);
-  const [locationName, setLocationName] = useState("New Delhi, India");
-  const [loading, setLoading] = useState(true);
+  const [loadingExtras, setLoadingExtras] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    async function loadDashboard() {
+    initializeLocation();
+  }, [initializeLocation]);
+
+  useEffect(() => {
+    async function loadDashboardExtras() {
+      if (!hasInitialized || lat === null || lng === null) return;
       try {
-        let lat = 28.6139;
-        let lng = 77.2090;
-
-        if (navigator.geolocation) {
-          try {
-            const pos = await new Promise<GeolocationPosition>((resolve, reject) => {
-              navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 5000 });
-            });
-            lat = pos.coords.latitude;
-            lng = pos.coords.longitude;
-          } catch (e) {
-            console.warn("Geolocation failed, using default.");
-          }
-        }
-
-        const [risk, fc, grd, rep, crime, place] = await Promise.all([
-          riskApi.evaluate(lat, lng),
-          riskApi.forecast(lat, lng),
+        setLoadingExtras(true);
+        const [fc, grd, rep, crime, place] = await Promise.all([
+          // Only fetch non-risk dependencies
+          fetch(`/api/v1/risk/forecast?latitude=${lat}&longitude=${lng}`).then(r => r.ok ? r.json() : null).catch(() => null),
           guardiansApi.list(),
           reportsApi.list(5),
           crimeApi.stats(lat, lng),
           placesApi.emergencyNearby(lat, lng)
         ]);
-        setRiskData(risk);
-        setForecast(fc);
+        if (fc) setForecast(fc);
         setGuardians(grd);
         setReports(rep);
         setCrimeStats(crime);
         setPlaces(place);
-        
-        const loc = await placesApi.reverseGeocode(lat, lng);
-        if (loc && loc.address) {
-          setLocationName(loc.address);
-        }
       } catch (e) {
-        console.error("Dashboard load error:", e);
-        setError("No live data available. Please check your backend connection and API keys.");
+        console.error("Dashboard extras load error:", e);
+        setError("Some live data could not be loaded.");
       } finally {
-        setLoading(false);
+        setLoadingExtras(false);
       }
     }
 
     // Companion reacts to loading state
     setExpression("thinking");
-    loadDashboard().then(() => {
-      // After data loads, react to risk level
-      // This runs after state updates settle
-    });
-
-    return () => {};
+    loadDashboardExtras();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [hasInitialized, lat, lng]);
+
+
 
   // Companion reacts to risk level changes
   useEffect(() => {
-    if (loading) return;
+    if (isRiskLoading || !hasInitialized) return;
     if (!riskData) {
       setExpression("concerned");
       return;
@@ -99,7 +81,7 @@ export default function Dashboard() {
     } else {
       setExpression("idle");
     }
-  }, [loading, riskData, setExpression, showSpeech]);
+  }, [isRiskLoading, hasInitialized, riskData, setExpression, showSpeech]);
 
   const currentRisk = riskData?.risk_score ?? 24;
   const riskLevel = riskData?.risk_level ?? "SAFE";
@@ -107,6 +89,7 @@ export default function Dashboard() {
   const riskBorderClass = riskLevel === "SAFE" ? "border-t-[#15803D]" : riskLevel === "WARNING" ? "border-t-[#B45309]" : "border-t-[#B91C1C]";
   const riskBadgeBg = riskLevel === "SAFE" ? "bg-[#DCFCE7] text-[#14532D]" : riskLevel === "WARNING" ? "bg-[#FEF3C7] text-[#78350F]" : "bg-[#FEE2E2] text-[#7F1D1D]";
 
+  const loading = !hasInitialized || isRiskLoading || loadingExtras;
   if (loading) {
     return (
       <div className="space-y-6">
@@ -147,7 +130,7 @@ export default function Dashboard() {
             Hello, {user?.user_metadata?.full_name?.split(" ")[0] || "Guardian"}
           </h1>
           <p className="text-[#4B5563] flex items-center gap-1.5 mt-1 text-sm font-medium">
-            <MapPin className="h-4 w-4 text-[#15803D]" /> {locationName}
+            <MapPin className="h-4 w-4 text-[#15803D]" /> {locationName || "Detecting Area..."}
           </p>
         </div>
         <Link href="/profile">
@@ -167,7 +150,9 @@ export default function Dashboard() {
               </div>
               <h2 className="text-4xl md:text-5xl font-black text-[#172018] tracking-tight">{currentRisk}<span className="text-xl md:text-2xl text-[#6B7280] font-semibold">/100</span></h2>
               <p className="text-lg text-[#172018] font-semibold">Current Area Risk: <span className={`${riskColorClass} font-bold`}>{riskLevel}</span></p>
+              {/* @ts-ignore */}
               {riskData?.xai_reasons?.[0] && <p className="text-[#4B5563] max-w-md text-sm font-normal leading-relaxed">{riskData.xai_reasons[0]}</p>}
+              {/* @ts-ignore */}
               {riskData?.confidence && <p className="text-xs text-[#6B7280] font-medium">AI Confidence Score: {Math.round(riskData.confidence * 100)}%</p>}
             </div>
             <div className="w-full md:w-auto flex flex-col gap-3">
