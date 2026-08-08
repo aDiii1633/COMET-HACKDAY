@@ -35,6 +35,7 @@ class Settings(BaseSettings):
 
     # External AI, Maps & Places APIs
     OPENAI_API_KEY: Optional[str] = None
+    GEMINI_API_KEY: Optional[str] = None
     GOOGLE_MAPS_API_KEY: Optional[str] = None
     GOOGLE_PLACES_API_KEY: Optional[str] = None
     DATA_GOV_IN_API_KEY: Optional[str] = None
@@ -69,6 +70,7 @@ class Settings(BaseSettings):
             ("GOOGLE_MAPS_API_KEY", self.GOOGLE_MAPS_API_KEY),
             ("GOOGLE_PLACES_API_KEY", self.GOOGLE_PLACES_API_KEY),
             ("OPENAI_API_KEY", self.OPENAI_API_KEY),
+            ("GEMINI_API_KEY", self.GEMINI_API_KEY),
             ("FIREBASE_PROJECT_ID", self.FIREBASE_PROJECT_ID),
             ("FIREBASE_PRIVATE_KEY", self.FIREBASE_PRIVATE_KEY),
             ("FIREBASE_CLIENT_EMAIL", self.FIREBASE_CLIENT_EMAIL),

@@ -2,7 +2,7 @@ from fastapi import APIRouter
 from backend.api.v1.endpoints import (
     auth, profile, users, guardians, reports, risk, routes,
     notifications, health, places, maps, ai_summary, emergency,
-    dashboard, admin, settings, crime
+    dashboard, admin, settings, crime, live
 )
 
 api_v1_router = APIRouter()
@@ -24,4 +24,4 @@ api_v1_router.include_router(dashboard.router)
 api_v1_router.include_router(admin.router)
 api_v1_router.include_router(settings.router)
 api_v1_router.include_router(crime.router)
-
+api_v1_router.include_router(live.router)

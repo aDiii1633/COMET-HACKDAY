@@ -2,11 +2,11 @@
 
 import { motion } from "framer-motion";
 import { Mic, MicOff, ShieldAlert } from "lucide-react";
-import { useVoiceAgent } from "@/hooks/useVoiceAgent";
+import { useGeminiLive } from "@/hooks/useGeminiLive";
 import { useState, useRef } from "react";
 
 export function FloatingVoiceAgent() {
-  const { isListening, isProcessing, toggleListening, triggerEmergencyManually } = useVoiceAgent();
+  const { isListening, isProcessing, toggleListening, triggerEmergencyManually, isConnected } = useGeminiLive();
   const [pressTimer, setPressTimer] = useState<NodeJS.Timeout | null>(null);
   const [isPressing, setIsPressing] = useState(false);
   const pressStartRef = useRef<number>(0);
@@ -43,11 +43,11 @@ export function FloatingVoiceAgent() {
       {/* Listening status text */}
       <motion.div 
         initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: isListening || isProcessing ? 1 : 0, y: isListening || isProcessing ? 0 : 10 }}
+        animate={{ opacity: isConnected || isProcessing ? 1 : 0, y: isConnected || isProcessing ? 0 : 10 }}
         className="mb-2 bg-[#DCFCE7] border border-[#86EFAC] px-3 py-1 rounded-full shadow-xs"
       >
         <span className="text-xs font-bold text-[#14532D]">
-          {isProcessing ? "Processing..." : "Listening..."}
+          {isProcessing ? "Processing..." : isConnected ? "Live Connected" : "Listening..."}
         </span>
       </motion.div>
 

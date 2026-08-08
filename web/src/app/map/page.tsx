@@ -12,6 +12,7 @@ import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import toast from "react-hot-toast";
 import { useCompanionState } from "@/store/useCompanionState";
+import { useGeminiLive } from "@/hooks/useGeminiLive";
 import { useLocationStore } from "@/store/useLocationStore";
 
 const MAP_ID = "DEMO_MAP_ID";
@@ -127,6 +128,7 @@ export default function MapPage() {
   const [reports, setReports] = useState<Array<{latitude: number, longitude: number, severity: number}>>([]);
   const [loadingExtras, setLoadingExtras] = useState(true);
   const companionState = useCompanionState();
+  const geminiLive = useGeminiLive();
   console.log("CLIENT API KEY:", apiKey);
 
   // Safe Route State
@@ -167,21 +169,35 @@ export default function MapPage() {
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const handleMapClick = async (e: any) => {
-    if (routesData) return; // Don't show area info if navigating
-    const lat = e.detail.latLng.lat;
-    const lng = e.detail.latLng.lng;
+    const clickLat = e.detail.latLng.lat;
+    const clickLng = e.detail.latLng.lng;
     
-    setSelectedArea({ loading: true, lat, lng });
+    if (routesData) {
+      // Simulate GPS movement/Risk Zone Detection during navigation
+      try {
+        const [risk] = await Promise.all([riskApi.evaluate(clickLat, clickLng)]);
+        if (risk.risk_score >= 60) {
+          toast.error("Simulated: Approaching Risk Zone");
+          geminiLive.sendSystemEvent(`RISK_ZONE_APPROACHING. Risk Score is ${risk.risk_score} (Danger). Tell the user they are approaching an area with higher historical crime exposure. Remind them you are with them.`);
+        } else {
+          toast.success("Simulated: Deviated from route");
+          geminiLive.sendSystemEvent(`ROUTE_DEVIATED. The user has deviated from the active SafeRoute. Ask if they want you to recalculate.`);
+        }
+      } catch (e) { }
+      return; 
+    }
+    
+    setSelectedArea({ loading: true, lat: clickLat, lng: clickLng });
     try {
       const [risk, stats, areaName] = await Promise.all([
-        riskApi.evaluate(lat, lng),
-        crimeApi.stats(lat, lng),
-        fetch(`https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&key=${apiKey}`).then(r => r.json()).then(d => d.results?.[0]?.formatted_address || "Unknown Area")
+        riskApi.evaluate(clickLat, clickLng),
+        crimeApi.stats(clickLat, clickLng),
+        fetch(`https://maps.googleapis.com/maps/api/geocode/json?latlng=${clickLat},${clickLng}&key=${apiKey}`).then(r => r.json()).then(d => d.results?.[0]?.formatted_address || "Unknown Area")
       ]);
       const context = { risk_score: risk.risk_score, risk_level: risk.risk_level, community_reports_count: stats.total_nearby_crimes };
       const explanation = await aiApi.chat("Explain the risk of this exact area.", context);
       
-      setSelectedArea({ loading: false, lat, lng, risk, stats, explanation, areaName });
+      setSelectedArea({ loading: false, lat: clickLat, lng: clickLng, risk, stats, explanation, areaName });
     } catch {
       setSelectedArea(null);
     }
@@ -217,10 +233,16 @@ export default function MapPage() {
   const startJourney = async (routeId: string) => {
     try {
       await routeApi.startJourney(destInput, 20, routeId);
-      toast.success("Journey started! Guardians notified.");
+      toast.success("Journey started! Safety Companion Active.");
       companionState.setExpression("celebrating");
-      companionState.triggerGesture("thumbsUp", 3000);
-      companionState.showSpeech("Guardians notified!", 3000);
+      
+      // Auto-start Gemini Live Voice Companion
+      if (!geminiLive.isConnected) {
+        geminiLive.toggleListening();
+        setTimeout(() => {
+          geminiLive.sendSystemEvent("JOURNEY_STARTED. You are now the user's personal safety companion for their journey. Briefly introduce yourself and say you're monitoring the route.");
+        }, 2000); // Wait for connection
+      }
     } catch (_e) {
       toast.error("Failed to start journey.");
     }
