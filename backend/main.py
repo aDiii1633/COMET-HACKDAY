@@ -47,14 +47,22 @@ app.include_router(api_v1_router, prefix=settings.API_V1_STR)
 @app.on_event("startup")
 async def startup_event():
     logger.info("safesphere_enterprise_backend_starting", version=settings.VERSION, env=settings.ENVIRONMENT)
-    # Automatically verify required environment variables at startup
-    settings.validate_required_environment()
-    initialize_firebase()
+    try:
+        settings.validate_required_environment()
+        initialize_firebase()
+    except Exception as e:
+        logger.warn("startup_init_warn", error=str(e))
     
-    # Initialize Crime Intelligence Layer
-    from backend.services.crime_data_service import CrimeDataService
-    crime_service = CrimeDataService()
-    await crime_service.fetch_government_crime_data()
+    # Background async initialization so port binding is instant
+    asyncio.create_task(async_background_init())
+
+async def async_background_init():
+    try:
+        from backend.services.crime_data_service import CrimeDataService
+        crime_service = CrimeDataService()
+        await crime_service.fetch_government_crime_data()
+    except Exception as e:
+        logger.warn("crime_service_async_init_warn", error=str(e))
 
 
 @app.on_event("shutdown")
